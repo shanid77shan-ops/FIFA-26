@@ -1,0 +1,17 @@
+{
+  "name": "FIFA World Cup 2026 — Match Updates",
+  "short_name": "FIFA 2026",
+  "description": "Follow FIFA World Cup 2026 match dates, times, and results.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#1a0505",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
