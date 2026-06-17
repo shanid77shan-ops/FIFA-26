@@ -48,6 +48,7 @@ function DashboardContent() {
   const [teamSearch, setTeamSearch] = useState("");
   const [now, setNow] = useState<Date | null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
+  const [showPastMatches, setShowPastMatches] = useState(false);
 
   const matchDays = useMemo(() => getMatchDays(), []);
   const matchesByDay = useMemo(() => getMatchesGroupedByDay(), []);
@@ -87,6 +88,10 @@ function DashboardContent() {
       getDefaultSelectedDay(now, matchesByDay, dateRange, matchDays)
     );
   }, [now, selectedDay, matchesByDay, dateRange, matchDays]);
+
+  useEffect(() => {
+    setShowPastMatches(false);
+  }, [selectedDay]);
 
   const searchResults = useMemo(
     () => searchMatchesByTeam(teamSearch),
@@ -132,6 +137,9 @@ function DashboardContent() {
     !showGlobalUpNext
       ? upNextMatch
       : null;
+  const pastMatchCount =
+    finishedMatches.length + awaitingResultMatches.length;
+  const hasPastMatches = pastMatchCount > 0;
 
   const matchCardProps = (match: Match) => ({
     match,
@@ -258,7 +266,20 @@ function DashboardContent() {
                 </div>
               )}
 
-              {awaitingResultMatches.length > 0 && (
+              {hasPastMatches && !showPastMatches && (
+                <button
+                  type="button"
+                  onClick={() => setShowPastMatches(true)}
+                  aria-label={`Show more, ${pastMatchCount} past ${
+                    pastMatchCount === 1 ? "match" : "matches"
+                  }`}
+                  className="mb-6 w-full rounded-xl border border-card-border bg-card/80 px-4 py-3 text-sm font-semibold text-accent transition hover:border-accent/50 hover:bg-card"
+                >
+                  Show more
+                </button>
+              )}
+
+              {showPastMatches && awaitingResultMatches.length > 0 && (
                 <div className="mb-6">
                   <h3 className="mb-3 text-base font-semibold">
                     Full time ({awaitingResultMatches.length})
@@ -274,7 +295,7 @@ function DashboardContent() {
                 </div>
               )}
 
-              {finishedMatches.length > 0 && (
+              {showPastMatches && finishedMatches.length > 0 && (
                 <div className="mb-6">
                   <h3 className="mb-3 text-base font-semibold">
                     Completed ({finishedMatches.length})
@@ -288,6 +309,16 @@ function DashboardContent() {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {hasPastMatches && showPastMatches && (
+                <button
+                  type="button"
+                  onClick={() => setShowPastMatches(false)}
+                  className="mb-6 w-full rounded-xl border border-card-border bg-card/80 px-4 py-3 text-sm font-semibold text-muted transition hover:border-accent/50 hover:bg-card hover:text-foreground"
+                >
+                  Show less
+                </button>
               )}
 
               {dayMatches.length === 0 && (
