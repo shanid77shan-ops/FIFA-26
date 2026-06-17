@@ -14,6 +14,7 @@ import type { Match } from "@/data/matches";
 import {
   getAllLiveMatches,
   getAwaitingResultMatchesForDay,
+  getDefaultSelectedDay,
   getFinishedMatchesForDay,
   getMatchDays,
   getMatchesGroupedByDay,
@@ -22,6 +23,8 @@ import {
   getUpcomingMatchesForDay,
   searchMatchesByTeam,
 } from "@/data/matches";
+import { UpNextMatchSection } from "@/components/UpNextMatchSection";
+import { isMatchLive } from "@/data/match-results";
 import {
   formatMatchDate,
   formatSelectedDayHeading,
@@ -68,23 +71,22 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!selectedDay && now) {
-      const today = getTodayIstDayKey(now);
-      let initialDay: string;
-
-      if (today >= dateRange.min && today <= dateRange.max) {
-        const hasTodayMatches = (matchesByDay.get(today)?.length ?? 0) > 0;
-        initialDay = hasTodayMatches
-          ? today
-          : matchDays.find((day) => day >= today) ?? matchDays[0];
-      } else if (today < dateRange.min) {
-        initialDay = matchDays[0];
-      } else {
-        initialDay = matchDays[matchDays.length - 1];
-      }
-
-      setSelectedDay(initialDay);
+      setSelectedDay(
+        getDefaultSelectedDay(now, matchesByDay, dateRange, matchDays)
+      );
     }
   }, [selectedDay, now, matchDays, dateRange, matchesByDay]);
+
+  useEffect(() => {
+    if (!now || !selectedDay) return;
+
+    const today = getTodayIstDayKey(now);
+    if (selectedDay >= today) return;
+
+    setSelectedDay(
+      getDefaultSelectedDay(now, matchesByDay, dateRange, matchDays)
+    );
+  }, [now, selectedDay, matchesByDay, dateRange, matchDays]);
 
   const searchResults = useMemo(
     () => searchMatchesByTeam(teamSearch),
@@ -111,16 +113,24 @@ function DashboardContent() {
     dayMatches,
     now
   );
+  const nextMatchGlobal = getNextUpcomingMatch(now);
   const upNextMatch =
     upcomingMatches.find((m) => !allLiveIds.has(m.id)) ?? null;
   const moreUpcomingMatches = upcomingMatches.filter(
-    (m) => m.id !== upNextMatch?.id && !allLiveIds.has(m.id)
+    (m) =>
+      m.id !== nextMatchGlobal?.id &&
+      m.id !== upNextMatch?.id &&
+      !allLiveIds.has(m.id)
   );
-  const nextMatchGlobal = getNextUpcomingMatch(now);
-  const nextFutureMatch =
+  const showGlobalUpNext =
     nextMatchGlobal &&
-    !dayMatches.some((m) => m.id === nextMatchGlobal.id)
-      ? nextMatchGlobal
+    !isMatchLive(nextMatchGlobal.kickoff, now) &&
+    !allLiveIds.has(nextMatchGlobal.id);
+  const dayUpNextMatch =
+    upNextMatch &&
+    upNextMatch.id !== nextMatchGlobal?.id &&
+    !showGlobalUpNext
+      ? upNextMatch
       : null;
 
   const matchCardProps = (match: Match) => ({
@@ -171,6 +181,18 @@ function DashboardContent() {
           <LiveMatchesSection scheduleLive={allLiveMatches} />
         )}
 
+        {!isSearching && showGlobalUpNext && nextMatchGlobal && (
+          <UpNextMatchSection
+            match={nextMatchGlobal}
+            now={now}
+            todayKey={todayKey}
+            expanded={expandedMatchId === nextMatchGlobal.id}
+            onExpandedChange={(id, open) =>
+              setExpandedMatchId(open ? id : null)
+            }
+          />
+        )}
+
         {!isSearching && (
           <div className="mb-6">
             <DateNavigation
@@ -213,10 +235,10 @@ function DashboardContent() {
                 {formatSelectedDayHeading(selectedDay, todayKey)}
               </h2>
 
-              {upNextMatch && allLiveMatches.length === 0 && (
+              {dayUpNextMatch && (
                 <div className="mb-6">
                   <h3 className="mb-3 text-base font-semibold">Up next</h3>
-                  <ScheduleMatchCard {...matchCardProps(upNextMatch)} />
+                  <ScheduleMatchCard {...matchCardProps(dayUpNextMatch)} />
                 </div>
               )}
 
@@ -275,16 +297,6 @@ function DashboardContent() {
                 </p>
               )}
             </section>
-
-            {nextFutureMatch && (
-              <section className="mb-6" aria-label="Next upcoming match">
-                <h2 className="mb-3 text-lg font-semibold">Next match</h2>
-                <p className="mb-3 text-xs text-muted">
-                  {formatMatchDate(nextFutureMatch.kickoff)}
-                </p>
-                <ScheduleMatchCard {...matchCardProps(nextFutureMatch)} />
-              </section>
-            )}
 
           </>
         )}

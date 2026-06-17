@@ -170,6 +170,32 @@ export function getTournamentDateRange(): { min: string; max: string } {
   return { min: days[0], max: days[days.length - 1] };
 }
 
+/** Pick the calendar day that best matches what the user should see right now */
+export function getDefaultSelectedDay(
+  now: Date,
+  matchesByDay: Map<string, Match[]>,
+  dateRange: { min: string; max: string },
+  matchDays: string[]
+): string {
+  const today = getIstDayKey(now.toISOString());
+
+  if (today < dateRange.min) return matchDays[0];
+  if (today > dateRange.max) return matchDays[matchDays.length - 1];
+
+  const nextMatch = getNextUpcomingMatch(now);
+  if (nextMatch) {
+    return getIstDayKey(nextMatch.kickoff);
+  }
+
+  const liveToday = getLiveMatchesForDay(matchesByDay.get(today) ?? [], now);
+  if (liveToday.length > 0) return today;
+
+  const hasTodayMatches = (matchesByDay.get(today)?.length ?? 0) > 0;
+  if (hasTodayMatches) return today;
+
+  return matchDays.find((day) => day >= today) ?? matchDays[0];
+}
+
 export function getNextUpcomingMatch(now: Date = new Date()): Match | null {
   return getUpcomingMatches(1, now)[0] ?? null;
 }
