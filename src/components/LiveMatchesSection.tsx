@@ -17,8 +17,13 @@ export function LiveMatchesSection({
   const { liveMatches, loading, error, getState } = useMatchUpdates();
 
   const displayMatches = useMemo(() => {
-    if (liveMatches.length > 0) {
-      return liveMatches.filter((m) => m.isLive);
+    const apiLive = liveMatches.filter((m) => m.isLive);
+    if (apiLive.length > 0) {
+      return apiLive.map((matchData) => ({
+        ...matchData,
+        homeTeam: { ...matchData.homeTeam, score: matchData.homeTeam.score ?? 0 },
+        awayTeam: { ...matchData.awayTeam, score: matchData.awayTeam.score ?? 0 },
+      }));
     }
 
     return scheduleLive.map((match) => {

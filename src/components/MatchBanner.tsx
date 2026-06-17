@@ -44,21 +44,44 @@ function TeamBannerSide({ teamName, align, score }: TeamBannerSideProps) {
   );
 }
 
-function FifaCenterBadge() {
+function FifaCenterBadge({
+  homeScore,
+  awayScore,
+}: {
+  homeScore?: number;
+  awayScore?: number;
+}) {
+  const showScore = homeScore !== undefined && awayScore !== undefined;
+
   return (
     <div className="relative z-10 flex w-[4.5rem] shrink-0 flex-col items-center justify-center rounded-xl border border-white/15 bg-black px-2 py-3 shadow-xl sm:w-20">
-      <span className="text-2xl" aria-hidden="true">
-        🏆
-      </span>
-      <span className="mt-1 text-[7px] font-bold leading-tight tracking-wide text-white sm:text-[8px]">
-        FIFA
-      </span>
-      <span className="text-[6px] font-semibold leading-tight text-white/80 sm:text-[7px]">
-        WORLD CUP
-      </span>
-      <span className="mt-0.5 text-xl font-black leading-none text-white/90 sm:text-2xl">
-        26
-      </span>
+      {showScore ? (
+        <>
+          <p className="text-lg font-black leading-none text-white sm:text-xl">
+            {homeScore}
+            <span className="mx-0.5 text-white/50">-</span>
+            {awayScore}
+          </p>
+          <span className="mt-1 text-[6px] font-semibold uppercase tracking-wide text-white/60">
+            Score
+          </span>
+        </>
+      ) : (
+        <>
+          <span className="text-2xl" aria-hidden="true">
+            🏆
+          </span>
+          <span className="mt-1 text-[7px] font-bold leading-tight tracking-wide text-white sm:text-[8px]">
+            FIFA
+          </span>
+          <span className="text-[6px] font-semibold leading-tight text-white/80 sm:text-[7px]">
+            WORLD CUP
+          </span>
+          <span className="mt-0.5 text-xl font-black leading-none text-white/90 sm:text-2xl">
+            26
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -91,7 +114,10 @@ export function MatchBanner({
           score={showScores ? homeScore : undefined}
         />
         <div className="-mx-3 flex shrink-0 items-center self-center sm:-mx-4">
-          <FifaCenterBadge />
+          <FifaCenterBadge
+            homeScore={showScores ? homeScore : undefined}
+            awayScore={showScores ? awayScore : undefined}
+          />
         </div>
         <TeamBannerSide
           teamName={awayTeam}

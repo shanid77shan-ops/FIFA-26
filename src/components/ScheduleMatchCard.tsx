@@ -7,7 +7,6 @@ import { useMatchUpdates } from "@/components/MatchUpdatesProvider";
 import { MatchBanner } from "@/components/MatchBanner";
 import { MatchDetailPanel } from "@/components/MatchDetailPanel";
 import {
-  hasVisibleScore,
   resolveMatchDisplay,
 } from "@/lib/match-display";
 import {
@@ -99,23 +98,19 @@ export function ScheduleMatchCard({
           <MatchBanner
             homeTeam={match.homeTeam}
             awayTeam={match.awayTeam}
-            homeScore={
-              hasVisibleScore(display) ? display.homeScore : undefined
-            }
-            awayScore={
-              hasVisibleScore(display) ? display.awayScore : undefined
-            }
+            homeScore={display.showScore ? display.homeScore : undefined}
+            awayScore={display.showScore ? display.awayScore : undefined}
             goals={display.goals}
           />
 
-          {hasVisibleScore(display) && (
+          {display.showScore && (
             <p className="mt-2 text-center text-sm font-semibold text-accent">
               {display.finished || display.awaitingResult ? "Final" : "Live"}:{" "}
               {display.homeScore} – {display.awayScore}
             </p>
           )}
 
-          {display.goals.length > 0 && !hasVisibleScore(display) && (
+          {display.goals.length > 0 && !display.showScore && (
             <GoalScorersList
               goals={display.goals}
               homeTeam={match.homeTeam}

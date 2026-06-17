@@ -86,9 +86,18 @@ type TeamSideProps = {
   logoUrl?: string;
   teamName: string;
   align: "left" | "right";
+  score?: number;
+  showScore?: boolean;
 };
 
-function TeamSide({ abbreviation, logoUrl, teamName, align }: TeamSideProps) {
+function TeamSide({
+  abbreviation,
+  logoUrl,
+  teamName,
+  align,
+  score,
+  showScore,
+}: TeamSideProps) {
   const roundedClass = align === "left" ? "rounded-l-full" : "rounded-r-full";
   const bgClass =
     align === "left"
@@ -121,6 +130,11 @@ function TeamSide({ abbreviation, logoUrl, teamName, align }: TeamSideProps) {
       <span className="text-lg font-black tracking-wider text-black sm:text-xl">
         {abbreviation}
       </span>
+      {showScore && score !== undefined && (
+        <span className="mt-0.5 text-2xl font-black leading-none text-black sm:text-3xl">
+          {score}
+        </span>
+      )}
     </div>
   );
 }
@@ -220,11 +234,13 @@ export function MatchCard({ matchData, onWatch }: MatchCardProps) {
                   logoUrl={homeTeam.logoUrl}
                   teamName={homeTeam.name}
                   align="left"
+                  score={homeTeam.score}
+                  showScore={isLive}
                 />
                 <div className="-mx-2 flex shrink-0 items-center self-center sm:-mx-2.5">
                   <ScoreCenter
-                    homeScore={homeTeam.score}
-                    awayScore={awayTeam.score}
+                    homeScore={homeTeam.score ?? 0}
+                    awayScore={awayTeam.score ?? 0}
                     tournament={tournament}
                     isLive={isLive}
                     kickoffLabel={kickoffLabel}
@@ -236,6 +252,8 @@ export function MatchCard({ matchData, onWatch }: MatchCardProps) {
                   logoUrl={awayTeam.logoUrl}
                   teamName={awayTeam.name}
                   align="right"
+                  score={awayTeam.score}
+                  showScore={isLive}
                 />
               </div>
             </div>
@@ -252,6 +270,13 @@ export function MatchCard({ matchData, onWatch }: MatchCardProps) {
             {homeTeam.name}{" "}
             <span className="font-normal text-white/70">Vs</span> {awayTeam.name}
           </p>
+          {isLive && (
+            <p className="mt-1 text-lg font-black text-white">
+              {homeTeam.score ?? 0}
+              <span className="mx-2 text-white/50">–</span>
+              {awayTeam.score ?? 0}
+            </p>
+          )}
           {goals.length > 0 && (
             <GoalScorersList
               goals={goals}

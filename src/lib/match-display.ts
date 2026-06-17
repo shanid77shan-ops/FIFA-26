@@ -12,11 +12,25 @@ export type MatchDisplayState = {
   finished: boolean;
   live: boolean;
   awaitingResult: boolean;
-  homeScore?: number;
-  awayScore?: number;
+  homeScore: number;
+  awayScore: number;
   goals: MatchGoalEvent[];
   minute?: number;
+  showScore: boolean;
 };
+
+function deriveScoresFromGoals(
+  goals: MatchGoalEvent[]
+): { homeScore: number; awayScore: number } {
+  return goals.reduce(
+    (acc, goal) => {
+      if (goal.team === "home") acc.homeScore += 1;
+      else acc.awayScore += 1;
+      return acc;
+    },
+    { homeScore: 0, awayScore: 0 }
+  );
+}
 
 export function resolveMatchDisplay(
   match: Match,
@@ -24,15 +38,17 @@ export function resolveMatchDisplay(
   liveState: MatchLiveState | null | undefined
 ): MatchDisplayState {
   const staticResult = getMatchResult(match.id);
+  const goals = getGoalsForDisplay(match.id, liveState);
+
+  const live =
+    liveState?.isLive || isMatchLive(match.kickoff, now);
   const finished =
     liveState?.isFinished ||
     isMatchFinished(match.kickoff, match.id, now);
-  const live =
-    liveState?.isLive || (!finished && isMatchLive(match.kickoff, now));
   const awaitingResult =
     !finished && isMatchAwaitingResult(match.kickoff, match.id, now);
 
-  const goals = getGoalsForDisplay(match.id, liveState);
+  const showScore = live || finished || awaitingResult;
 
   let homeScore = liveState?.homeScore;
   let awayScore = liveState?.awayScore;
@@ -42,22 +58,32 @@ export function resolveMatchDisplay(
     awayScore = staticResult.awayScore;
   }
 
-  const hasScore =
-    homeScore !== undefined &&
-    awayScore !== undefined &&
-    (finished || live || awaitingResult || goals.length > 0);
+  if (homeScore === undefined && goals.length > 0) {
+    const derived = deriveScoresFromGoals(goals);
+    homeScore = derived.homeScore;
+    awayScore = derived.awayScore;
+  }
+
+  if (showScore) {
+    homeScore = homeScore ?? 0;
+    awayScore = awayScore ?? 0;
+  } else {
+    homeScore = 0;
+    awayScore = 0;
+  }
 
   return {
     finished,
-    live,
+    live: live && !finished,
     awaitingResult,
-    homeScore: hasScore ? homeScore : undefined,
-    awayScore: hasScore ? awayScore : undefined,
+    homeScore,
+    awayScore,
     goals,
     minute: liveState?.minute,
+    showScore,
   };
 }
 
 export function hasVisibleScore(display: MatchDisplayState): boolean {
-  return display.homeScore !== undefined && display.awayScore !== undefined;
+  return display.showScore;
 }
