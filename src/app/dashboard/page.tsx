@@ -13,12 +13,12 @@ import { SearchBar } from "@/components/SearchBar";
 import type { Match } from "@/data/matches";
 import {
   getAllLiveMatches,
-  getAwaitingResultMatchesForDay,
+  getAllPastMatches,
   getDefaultSelectedDay,
-  getFinishedMatchesForDay,
   getMatchDays,
   getMatchesGroupedByDay,
   getNextUpcomingMatch,
+  groupPastMatchesByDay,
   getTournamentDateRange,
   getUpcomingMatchesForDay,
   searchMatchesByTeam,
@@ -89,10 +89,6 @@ function DashboardContent() {
     );
   }, [now, selectedDay, matchesByDay, dateRange, matchDays]);
 
-  useEffect(() => {
-    setShowPastMatches(false);
-  }, [selectedDay]);
-
   const searchResults = useMemo(
     () => searchMatchesByTeam(teamSearch),
     [teamSearch]
@@ -113,11 +109,8 @@ function DashboardContent() {
   const allLiveIds = new Set(allLiveMatches.map((m) => m.id));
   const dayMatches = matchesByDay.get(selectedDay) ?? [];
   const upcomingMatches = getUpcomingMatchesForDay(dayMatches, now);
-  const finishedMatches = getFinishedMatchesForDay(dayMatches, now);
-  const awaitingResultMatches = getAwaitingResultMatchesForDay(
-    dayMatches,
-    now
-  );
+  const allPastMatches = getAllPastMatches(now);
+  const pastMatchesByDay = groupPastMatchesByDay(allPastMatches);
   const nextMatchGlobal = getNextUpcomingMatch(now);
   const upNextMatch =
     upcomingMatches.find((m) => !allLiveIds.has(m.id)) ?? null;
@@ -137,8 +130,7 @@ function DashboardContent() {
     !showGlobalUpNext
       ? upNextMatch
       : null;
-  const pastMatchCount =
-    finishedMatches.length + awaitingResultMatches.length;
+  const pastMatchCount = allPastMatches.length;
   const hasPastMatches = pastMatchCount > 0;
 
   const matchCardProps = (match: Match) => ({
@@ -199,6 +191,57 @@ function DashboardContent() {
               setExpandedMatchId(open ? id : null)
             }
           />
+        )}
+
+        {!isSearching && hasPastMatches && !showPastMatches && (
+          <button
+            type="button"
+            onClick={() => setShowPastMatches(true)}
+            aria-label={`Show more, ${pastMatchCount} past ${
+              pastMatchCount === 1 ? "match" : "matches"
+            }`}
+            className="mb-6 w-full rounded-xl border border-accent/40 bg-accent/10 px-4 py-3.5 text-center transition hover:border-accent/60 hover:bg-accent/15"
+          >
+            <span className="block text-sm font-semibold text-accent">
+              Show more
+            </span>
+            <span className="mt-1 block text-xs text-muted">
+              View {pastMatchCount} past match
+              {pastMatchCount === 1 ? "" : "es"} &amp; results
+            </span>
+          </button>
+        )}
+
+        {!isSearching && showPastMatches && (
+          <section aria-label="Past matches" className="mb-6">
+            <h2 className="mb-4 text-lg font-semibold">
+              Past matches ({pastMatchCount})
+            </h2>
+            <div className="space-y-8">
+              {pastMatchesByDay.map(({ dayKey, matches }) => (
+                <div key={dayKey}>
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
+                    {formatSelectedDayHeading(dayKey, todayKey)}
+                  </p>
+                  <div className="space-y-4">
+                    {matches.map((match) => (
+                      <ScheduleMatchCard
+                        key={match.id}
+                        {...matchCardProps(match)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPastMatches(false)}
+              className="mt-6 w-full rounded-xl border border-card-border bg-card/80 px-4 py-3 text-sm font-semibold text-muted transition hover:border-accent/50 hover:bg-card hover:text-foreground"
+            >
+              Show less
+            </button>
+          </section>
         )}
 
         {!isSearching && (
@@ -264,61 +307,6 @@ function DashboardContent() {
                     ))}
                   </div>
                 </div>
-              )}
-
-              {hasPastMatches && !showPastMatches && (
-                <button
-                  type="button"
-                  onClick={() => setShowPastMatches(true)}
-                  aria-label={`Show more, ${pastMatchCount} past ${
-                    pastMatchCount === 1 ? "match" : "matches"
-                  }`}
-                  className="mb-6 w-full rounded-xl border border-card-border bg-card/80 px-4 py-3 text-sm font-semibold text-accent transition hover:border-accent/50 hover:bg-card"
-                >
-                  Show more
-                </button>
-              )}
-
-              {showPastMatches && awaitingResultMatches.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="mb-3 text-base font-semibold">
-                    Full time ({awaitingResultMatches.length})
-                  </h3>
-                  <div className="space-y-4">
-                    {awaitingResultMatches.map((match) => (
-                      <ScheduleMatchCard
-                        key={match.id}
-                        {...matchCardProps(match)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {showPastMatches && finishedMatches.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="mb-3 text-base font-semibold">
-                    Completed ({finishedMatches.length})
-                  </h3>
-                  <div className="space-y-4">
-                    {finishedMatches.map((match) => (
-                      <ScheduleMatchCard
-                        key={match.id}
-                        {...matchCardProps(match)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {hasPastMatches && showPastMatches && (
-                <button
-                  type="button"
-                  onClick={() => setShowPastMatches(false)}
-                  className="mb-6 w-full rounded-xl border border-card-border bg-card/80 px-4 py-3 text-sm font-semibold text-muted transition hover:border-accent/50 hover:bg-card hover:text-foreground"
-                >
-                  Show less
-                </button>
               )}
 
               {dayMatches.length === 0 && (

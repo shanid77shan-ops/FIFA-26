@@ -270,3 +270,38 @@ export function getAwaitingResultMatchesForDay(
       (a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()
     );
 }
+
+/** All finished or awaiting-result matches across the tournament */
+export function getAllPastMatches(now: Date = new Date()): Match[] {
+  return ALL_MATCHES.filter(
+    (match) =>
+      isMatchFinished(match.kickoff, match.id, now) ||
+      isMatchAwaitingResult(match.kickoff, match.id, now)
+  ).sort(
+    (a, b) => new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime()
+  );
+}
+
+/** Group matches by IST calendar day, newest days first */
+export function groupPastMatchesByDay(
+  matches: Match[]
+): Array<{ dayKey: string; matches: Match[] }> {
+  const byDay = new Map<string, Match[]>();
+
+  for (const match of matches) {
+    const dayKey = getIstDayKey(match.kickoff);
+    const list = byDay.get(dayKey) ?? [];
+    list.push(match);
+    byDay.set(dayKey, list);
+  }
+
+  return [...byDay.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([dayKey, dayMatches]) => ({
+      dayKey,
+      matches: dayMatches.sort(
+        (a, b) =>
+          new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime()
+      ),
+    }));
+}
