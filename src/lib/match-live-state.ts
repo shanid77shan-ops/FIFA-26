@@ -75,6 +75,11 @@ function mergeLiveStates(
       continue;
     }
 
+    // Recorded final results in MATCH_RESULTS always win over live API noise
+    if (existing.source === "static" && existing.isFinished) {
+      continue;
+    }
+
     if (state.source === "sportmonks" && (state.isLive || state.isFinished)) {
       merged[state.matchId] = state;
     }

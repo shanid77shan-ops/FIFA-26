@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAllLiveMatches } from "@/data/matches";
+import { MATCH_RESULTS } from "@/data/match-results";
 import { buildMatchUpdatesFromFixtures } from "@/lib/match-live-state";
 import { scheduleMatchToMatchData } from "@/lib/match-carousel";
 import { getTodayIstDayKey, addDaysToDayKey } from "@/lib/match-utils";
@@ -22,6 +23,8 @@ function enrichWithScheduleLive(
   );
 
   for (const match of scheduleLive) {
+    if (match.id in MATCH_RESULTS) continue;
+
     const existing = byMatchId[match.id];
     if (!existing?.isLive && !existing?.isFinished) {
       byMatchId[match.id] = {

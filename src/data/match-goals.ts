@@ -6,6 +6,17 @@ import type { MatchGoalEvent } from "@/types/match-live";
 const HOME_MINUTES = [12, 34, 56, 78, 88];
 const AWAY_MINUTES = [19, 41, 63, 85, 90];
 
+/** Real goal scorers for matches with known events */
+export const MATCH_GOAL_EVENTS: Record<string, MatchGoalEvent[]> = {
+  I2: [
+    { minute: 29, player: "Erling Haaland", team: "away" },
+    { minute: 39, player: "Aymen Hussein", team: "home" },
+    { minute: 43, player: "Erling Haaland", team: "away" },
+    { minute: 77, player: "Leo Ostigard", team: "away" },
+    { minute: 90, player: "Kristian Thorstvedt", team: "away" },
+  ],
+};
+
 function scorerName(teamName: string, index: number): string {
   const star = resolveKeyPlayer(teamName);
   if (star && index === 0) return star.name;
@@ -13,7 +24,7 @@ function scorerName(teamName: string, index: number): string {
   return `${code} Player ${index + 1}`;
 }
 
-export function getStaticGoalsForMatch(matchId: string): MatchGoalEvent[] {
+function buildGeneratedGoals(matchId: string): MatchGoalEvent[] {
   const result = MATCH_RESULTS[matchId];
   const match = ALL_MATCHES.find((m) => m.id === matchId);
   if (!result || !match) return [];
@@ -37,4 +48,11 @@ export function getStaticGoalsForMatch(matchId: string): MatchGoalEvent[] {
   }
 
   return goals.sort((a, b) => a.minute - b.minute);
+}
+
+export function getStaticGoalsForMatch(matchId: string): MatchGoalEvent[] {
+  const explicit = MATCH_GOAL_EVENTS[matchId];
+  if (explicit?.length) return explicit;
+
+  return buildGeneratedGoals(matchId);
 }

@@ -18,6 +18,7 @@ export const MATCH_RESULTS: Record<
   G1: { homeScore: 1, awayScore: 1 },
   H1: { homeScore: 1, awayScore: 0 },
   H2: { homeScore: 0, awayScore: 0 },
+  I2: { homeScore: 1, awayScore: 4 },
 };
 
 export const MATCH_DURATION_MS = 105 * 60 * 1000;
